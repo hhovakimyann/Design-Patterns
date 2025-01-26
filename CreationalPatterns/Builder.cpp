@@ -1,127 +1,134 @@
 #include <iostream>
 #include <string>
+#include <vector>
+using namespace std;
 
-class ProductCar {
+
+class Computer {
 private:
-    std::string color;
-    std::string name;
-    std::string engine;
+   string cpu;
+   string gpu;
+   string ram;
+   string storage;
+   string powerSupply;
+
+
 public:
-    std::string getColor() {
-        return color;
-    }
-    void setColor(const std::string color_) {
-        color = color_;
-    }
+   void setCPU(const string& cpu) { this->cpu = cpu; }
+   void setGPU(const string& gpu) { this->gpu = gpu; }
+   void setRAM(const string& ram) { this->ram = ram; }
+   void setStorage(const string& storage) { this->storage = storage; }
+   void setPowerSupply(const string& powerSupply) { this->powerSupply = powerSupply; }
 
-    std::string getName() {
-        return name;
-    }
-    void setName(const std::string name_) {
-        name = name_;
-    }
 
-    std::string getEngine() {
-        return engine;
-    }
-    
-    void setEngine(const std::string engine_) {
-        engine = engine_;
-    }
-
-    void showDetails() const {
-        std::cout << "Car Name: " << name << ", Engine: " << engine << ", Color: " << color << std::endl;
-    }
+   void showSpecs() const {
+       cout << "CPU: " << cpu << "\n";
+       cout << "GPU: " << gpu << "\n";
+       cout << "RAM: " << ram << "\n";
+       cout << "Storage: " << storage << "\n";
+       cout << "Power Supply: " << powerSupply << "\n";
+   }
 };
 
 
-class CarBuilder {
-protected:
-    ProductCar *car;
+
+
+class ComputerBuilder {
 public:
-    CarBuilder() : car(new ProductCar()) {}
-    virtual ~CarBuilder() {
-        delete car;
-    }
-
-    ProductCar* getCar() const {
-        return car;
-    }
-
-    virtual void buildName() const = 0;
-    virtual void buildEngine() const = 0;
-    virtual void buildColor() const = 0;
+   virtual ~ComputerBuilder() {}
+   virtual void buildCPU() = 0;
+   virtual void buildGPU() = 0;
+   virtual void buildRAM() = 0;
+   virtual void buildStorage() = 0;
+   virtual void buildPowerSupply() = 0;
+   virtual Computer* getComputer() = 0;
 };
 
 
-class DefaultCar : public CarBuilder {
-public:
-    void buildName() const override {
-        car->setName("Opel");
-    }
 
-    void buildColor() const override {
-        car->setColor("Red");
-    }
-    
-    void buildEngine() const override {
-        car->setEngine("1.6 Eco");
-    }
-};
 
-class SportCar : public CarBuilder {
-public:
-    void buildName() const override {
-        car->setName("Porsche");
-    }
-
-    void buildColor() const override {
-        car->setColor("White and Black");
-    }
-    
-    void buildEngine() const override {
-        car->setEngine("6.3");
-    }
-};
-
-class Director {
+class GamingComputerBuilder : public ComputerBuilder {
 private:
-    CarBuilder* builder;
-public: 
-    void setBuilder(CarBuilder* car) {
-        builder = car;
-    }
+   Computer* computer;
 
-    void carConstruct() const {
-        builder->buildColor();
-        builder->buildEngine();
-        builder->buildName();
-    }
 
-    ProductCar* getCar() const {
-        return builder->getCar();
-    }
+public:
+   GamingComputerBuilder() : computer(new Computer()) {}
+   void buildCPU() override { computer->setCPU("Intel Core i9"); }
+   void buildGPU() override { computer->setGPU("NVIDIA RTX 4090"); }
+   void buildRAM() override { computer->setRAM("32GB DDR5"); }
+   void buildStorage() override { computer->setStorage("2TB NVMe SSD"); }
+   void buildPowerSupply() override { computer->setPowerSupply("850W Gold"); }
+
+
+   Computer* getComputer() override { return computer; }
 };
 
-int main () {
-    Director director;
-    
-    DefaultCar* defCar = new DefaultCar();
-    director.setBuilder(defCar);
-    director.carConstruct();
 
-    ProductCar* car1 = director.getCar();
-    car1->showDetails();
-   
-    SportCar* sportCar = new SportCar();
-    director.setBuilder(sportCar);
-    director.carConstruct();
 
-    ProductCar* car2 = director.getCar();
-    car2->showDetails();
 
-    delete defCar;
-    delete sportCar;
+class OfficeComputerBuilder : public ComputerBuilder {
+private:
+   Computer* computer;
 
-    return 0;
+
+public:
+   OfficeComputerBuilder() : computer(new Computer()) {}
+
+
+   void buildCPU() override { computer->setCPU("Intel Core i5"); }
+   void buildGPU() override { computer->setGPU("Integrated Graphics"); }
+   void buildRAM() override { computer->setRAM("16GB DDR4"); }
+   void buildStorage() override { computer->setStorage("512GB SSD"); }
+   void buildPowerSupply() override { computer->setPowerSupply("500W Bronze"); }
+
+
+   Computer* getComputer() override { return computer; }
+};
+
+
+
+
+class ComputerDirector {
+private:
+   ComputerBuilder* builder;
+
+
+public:
+   void setBuilder(ComputerBuilder* builder) {
+       this->builder = builder;
+   }
+
+
+   Computer* constructComputer() {
+       builder->buildCPU();
+       builder->buildGPU();
+       builder->buildRAM();
+       builder->buildStorage();
+       builder->buildPowerSupply();
+       return builder->getComputer();
+   }
+};
+
+
+
+
+int main() {
+   ComputerDirector director;
+
+
+   GamingComputerBuilder gamingBuilder;
+   director.setBuilder(&gamingBuilder);
+   Computer* gamingComputer = director.constructComputer();
+   cout << "Gaming Computer:\n";
+   gamingComputer->showSpecs();
+   delete gamingComputer; 
+
+
+   OfficeComputerBuilder officeBuilder;
+   director.setBuilder(&officeBuilder);
+   Computer* officeComputer = director.constructComputer();
+   cout << "\nOffice Computer:\n";
+   officeComputer->showSpecs();
+   delete officeComputer;
 }
