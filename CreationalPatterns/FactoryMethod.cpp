@@ -1,71 +1,75 @@
 #include <iostream>
-
+#include <map>
+#include <memory>
+#include <functional>
 
 struct IAnimal {
-    virtual ~IAnimal() = 0;
+    virtual ~IAnimal() = default;
     virtual void MakeSound() const = 0;
 };
-IAnimal::~IAnimal() {}
 
 struct Dog : public IAnimal {
-    void MakeSound() const {
+    void MakeSound() const override {
         std::cout << "Haf-Haf" << std::endl;
     }
 };
 
 struct Cat : public IAnimal {
-    void MakeSound() const {
+    void MakeSound() const override {
         std::cout << "Meow~" << std::endl;
     }
 };
+
 struct Cow : public IAnimal {
-    void MakeSound() const {
+    void MakeSound() const override {
         std::cout << "Moo!" << std::endl;
     }
 };
 
+using AnimalFactory = std::function<std::unique_ptr<IAnimal>()>;
 
-struct IFactory {
-    virtual ~IFactory() = 0;
-    virtual IAnimal* makeAnimal() const = 0;
-};
-
-IFactory::~IFactory() {}
-
-struct DogFactory : public IFactory {
-    IAnimal* makeAnimal() const {
-        return new Dog();
+class AnimalRegistry {
+public:
+    static AnimalRegistry& Instance() {
+        static AnimalRegistry instance;
+        return instance;
     }
-};
 
-struct CatFactory : public IFactory {
-    IAnimal* makeAnimal() const {
-        return new Cat();
+    void RegisterAnimal(const std::string& type, AnimalFactory factory) {
+        factoryMap[type] = factory;
     }
-};
 
-struct CowFactory : public IFactory {
-     IAnimal* makeAnimal() const {
-        return new Cow();
+    std::unique_ptr<IAnimal> CreateAnimal(const std::string& type) const {
+        auto it = factoryMap.find(type);
+        if (it != factoryMap.end()) {
+            return it->second();
+        }
+        return nullptr;
     }
+
+private:
+    std::map<std::string, AnimalFactory> factoryMap;
+    AnimalRegistry() = default;
 };
 
-void ClientCode(const IFactory& fac) {
-    auto ptr = fac.makeAnimal();
-    ptr->MakeSound();
-    delete ptr;
+void ClientCode(const std::string& type) {
+    auto animal = AnimalRegistry::Instance().CreateAnimal(type);
+    if (animal) {
+        animal->MakeSound();
+    } else {
+        std::cout << "Unknown animal type: " << type << std::endl;
+    }
 }
 
-int main () {
-    IFactory *dog = new DogFactory();
-    IFactory *cat = new CatFactory();
-    IFactory *cow = new CowFactory();
+int main() {
+    AnimalRegistry::Instance().RegisterAnimal("Dog", [] { return std::make_unique<Dog>(); });
+    AnimalRegistry::Instance().RegisterAnimal("Cat", [] { return std::make_unique<Cat>(); });
+    AnimalRegistry::Instance().RegisterAnimal("Cow", [] { return std::make_unique<Cow>(); });
 
-    ClientCode(*dog);
-    ClientCode(*cat);
-    ClientCode(*cow);
+    ClientCode("Dog");
+    ClientCode("Cat");
+    ClientCode("Cow");
+    ClientCode("Elephant"); 
 
-    delete dog;
-    delete cat;
-    delete cow;
+    return 0;
 }
